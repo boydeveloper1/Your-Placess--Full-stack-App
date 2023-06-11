@@ -71,6 +71,6 @@
   .nav-links button:hover,
   .nav-links button:active {
     background: #191938;
-    color: #292929;
+    color: white;
   }
 }
