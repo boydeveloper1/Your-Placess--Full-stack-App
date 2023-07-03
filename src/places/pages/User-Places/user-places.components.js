@@ -1,45 +1,52 @@
-import React from "react";
+import React, { Fragment, useEffect, useState } from "react";
 
 import { useParams } from "react-router-dom";
 
 import PlaceList from "../../components/Place-List/place-list.components";
+import ErrorModal from "../../../shared/components/UIELEMENTS/Error-Modal/error-modal.components";
+import LoadingSpinner from "../../../shared/components/UIELEMENTS/Loading-Spinner/loading-spinner.components";
+import { useHttpClient } from "../../../shared/hooks/http-hook";
 
-const DUMMY_PLACES = [
-  {
-    id: "p1",
-    title: "Empire State Building",
-    description: "One of the most famous sky scrappers in the world",
-    imageUrl:
-      "https://images.unsplash.com/photo-1652689035535-c297e19d6dbf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80",
-    address: "20 W 34th St., New York, NY 10001",
-    location: {
-      lat: 40.7484405,
-      lng: -73.9878584,
-    },
-    creator: "u1",
-  },
-  {
-    id: "p2",
-    title: "Emp State Building",
-    description: "One of the most famous sky scrappers in the world",
-    imageUrl:
-      "https://images.unsplash.com/photo-1652689035535-c297e19d6dbf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80",
-    address: "20 W 34th St., New York, NY 10001",
-    location: {
-      lat: 40.7484405,
-      lng: -73.9878584,
-    },
-    creator: "u2",
-  },
-];
 const UserPlaces = () => {
+  const [loadedPlaces, setLoadedPlaces] = useState();
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+
   // This gives the dynamic part of route from App.js
   const userId = useParams().userId;
+
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        const responseData = await sendRequest(
+          `${process.env.REACT_APP_BACKEND_URL}/places/user/${userId}`
+        );
+        setLoadedPlaces(responseData.places);
+      } catch (error) {}
+    };
+    fetchPlaces();
+  }, [sendRequest, userId]);
   // Compare it against the data we have to render exactly places based on the user
-  const loadedPlace = DUMMY_PLACES.filter(
-    (places) => places.creator === userId
+
+  // filtering out the places that was deleted
+  const placeDeletedHandler = (deletedPlaceId) => {
+    setLoadedPlaces((prevplaces) =>
+      prevplaces.filter((place) => place.id !== deletedPlaceId)
+    );
+  };
+
+  return (
+    <Fragment>
+      <ErrorModal error={error} onClear={clearError} />
+      {isLoading && (
+        <div className="center">
+          <LoadingSpinner />
+        </div>
+      )}
+      {!isLoading && loadedPlaces && (
+        <PlaceList items={loadedPlaces} onDeletePlace={placeDeletedHandler} />
+      )}
+    </Fragment>
   );
-  return <PlaceList items={loadedPlace} />;
 };
 
 export default UserPlaces;

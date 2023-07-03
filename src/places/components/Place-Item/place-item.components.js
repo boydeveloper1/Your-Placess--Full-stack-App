@@ -4,10 +4,16 @@ import Card from "../../../shared/components/UIELEMENTS/Card/card-components";
 import Button from "../../../shared/components/Form-Elements/Button/button.components";
 import Modal from "../../../shared/components/UIELEMENTS/Modal/modal.components";
 import Map from "../../../shared/components/UIELEMENTS/Map/map.components";
+import ErrorModal from "../../../shared/components/UIELEMENTS/Error-Modal/error-modal.components";
+import LoadingSpinner from "../../../shared/components/UIELEMENTS/Loading-Spinner/loading-spinner.components";
 import { AuthContext } from "../../../shared/context/auth-context";
+import { useHttpClient } from "../../../shared/hooks/http-hook";
 import "./place-item.styles.css";
 
-const PlaceItem = ({ place }) => {
+const PlaceItem = ({ place, onDelete }) => {
+  const { description, id, address, image, title, location, creator } = place;
+
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
   const auth = useContext(AuthContext);
 
   const [showMap, setShowMap] = useState(false);
@@ -27,16 +33,22 @@ const PlaceItem = ({ place }) => {
     setShowConfirmModal(false);
   };
 
-  const confirmDeleteHandler = () => {
+  const confirmDeleteHandler = async () => {
     setShowConfirmModal(false);
-    console.log("Deleting!!");
+    try {
+      await sendRequest(
+        process.env.REACT_APP_BACKEND_URL + `/places/${id}`,
+        "DELETE",
+        null,
+        { Authorization: "Bearer " + auth.token }
+      );
+      onDelete(id);
+    } catch (error) {}
   };
-
-  const { description, id, address, imageUrl, title, location, creator } =
-    place;
 
   return (
     <Fragment>
+      <ErrorModal error={error} onClear={clearError} />
       <Modal
         show={showMap}
         onCancel={closeMapHandler}
@@ -72,8 +84,12 @@ const PlaceItem = ({ place }) => {
       </Modal>
       <li className="place-item">
         <Card className="place-item__content">
+          {isLoading && <LoadingSpinner />}
           <div className="place-item__image">
-            <img src={imageUrl} alt={title} />
+            <img
+              src={`${process.env.REACT_APP_ASSET_URL}/${image}`}
+              alt={title}
+            />
           </div>
           <div className="place-item__info">
             <h2>{title}</h2>
@@ -84,8 +100,10 @@ const PlaceItem = ({ place }) => {
             <Button inverse onClick={openMapHandler}>
               VIEW ON MAP!
             </Button>
-            {auth.isLoggedIn && <Button to={`/places/${id}`}>EDIT </Button>}
-            {auth.isLoggedIn && (
+            {auth.userId === creator && (
+              <Button to={`/places/${id}`}>EDIT </Button>
+            )}
+            {auth.userId === creator && (
               <Button danger onClick={showDeleteWarningHandler}>
                 DELETE
               </Button>
