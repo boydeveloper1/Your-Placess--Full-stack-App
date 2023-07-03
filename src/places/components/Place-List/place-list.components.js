@@ -10,7 +10,7 @@ const PlaceList = ({ items, onDeletePlace }) => {
     return (
       <div className="place-List center">
         <Card>
-          <h2>No places found!!! You can create one below. </h2>
+          <h2>No places found! You can create one below. </h2>
           <Button to="/places/new"> Add Place</Button>
         </Card>
       </div>
